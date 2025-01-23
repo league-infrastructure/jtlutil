@@ -72,10 +72,8 @@ def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> 
     else:
         fp = find_config_file(file, dirs)
 
-    assert fp.exists(), f"Config file {fp} does not exist"
-
     config = {
-        '_LEAGUE_ENV_PATH': str(fp.absolute()),
+        '__CONFIG_PATH': str(fp.absolute()),
         **os.environ,
         **dotenv_values(fp),
     }

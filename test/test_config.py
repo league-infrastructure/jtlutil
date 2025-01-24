@@ -57,4 +57,56 @@ def test_find_config_file():
         
             if tf.exists():
                 tf.unlink()
+                
+
+def test_config_object():
+    config_data = {
+        'key1': 'value1',
+        'key2': 'value2',
+        'key3': 'value3'
+    }
+    
+    config = Config(config_data)
+    
+    # Test attribute access
+    assert config.key1 == 'value1'
+    assert config.key2 == 'value2'
+    assert config.key3 == 'value3'
+    
+    # Test item access
+    assert config['key1'] == 'value1'
+    assert config['key2'] == 'value2'
+    assert config['key3'] == 'value3'
+    
+    # Test item setting
+    config['key4'] = 'value4'
+    assert config.key4 == 'value4'
+    
+    # Test item deletion
+    del config['key4']
+    try:
+        _ = config.key4
+        assert False, "Expected AttributeError"
+    except AttributeError:
+        pass
+    
+    # Test contains
+    assert 'key1' in config
+    assert 'key4' not in config
+    
+    # Test get method
+    assert config.get('key1') == 'value1'
+    assert config.get('key4') is None
+    assert config.get('key4', 'default') == 'default'
+    
+    # Test keys, values, items
+    assert set(config.keys()) == {'key1', 'key2', 'key3'}
+    assert set(config.values()) == {'value1', 'value2', 'value3'}
+    assert set(config.items()) == {('key1', 'value1'), ('key2', 'value2'), ('key3', 'value3')}
+    
+    config.key4 = 'value4'
+    assert config['key4'] == 'value4'
+    assert set(config.keys()) == {'key1', 'key2', 'key3', 'key4'}
+    assert set(config.values()) == {'value1', 'value2', 'value3', 'value4'}
+    
     

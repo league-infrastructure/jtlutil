@@ -5,6 +5,46 @@ from typing import Any, Dict, List, Tuple
 from dotenv import dotenv_values
 import os 
 
+class Config:
+    def __init__(self, config_dict: Dict[str, Any]):
+        self._config_dict = config_dict
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == "_config_dict":
+            super().__setattr__(name, value)
+        else:
+            self._config_dict[name] = value
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return self._config_dict[name]
+        except KeyError:
+            raise AttributeError(f"'Config' object has no attribute '{name}'")
+
+    def __getitem__(self, key: str) -> Any:
+        return self._config_dict[key]
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._config_dict[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self._config_dict[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._config_dict
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._config_dict.get(key, default)
+
+    def keys(self) -> List[str]:
+        return list(self._config_dict.keys())
+
+    def values(self) -> List[Any]:
+        return list(self._config_dict.values())
+
+    def items(self) -> List[Tuple[str, Any]]:
+        return list(self._config_dict.items())
+
 def walk_up(d, f=None) -> List[Path]:
     d = Path(d).resolve()
     paths = []
@@ -61,7 +101,7 @@ def find_config_file(file: str | List[str], dirs: List[str] | List[Path] = None)
     raise FileNotFoundError(f"Could not find any of {file} in {dirs}")
 
 
-def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> Dict[str, Any]:
+def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> Config:
 
     if file is None:
         file = 'config.env'
@@ -78,7 +118,7 @@ def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> 
         **dotenv_values(fp),
     }
 
-    return config
+    return Config(config)
 
 
 def path_interp(path: str, **kwargs) -> Tuple[str, Dict[str, Any]]:

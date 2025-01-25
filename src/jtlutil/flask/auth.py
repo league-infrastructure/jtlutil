@@ -78,17 +78,18 @@ def load_user(app):
         login_user(user)
     else:
         current_app.logger.error("No ssoid in query args")
-        assert False, "No ssoid in query args"
+        #assert False, "No ssoid in query args"
         
 
 
 @auth_bp.route("/login")
 def login():
 
+    next = request.args.get("next", url_for("index", _external=True))
+    
     login_url = insert_query_arg(
-        current_app.app_config["AUTH_SERVER_URL"]+"/login",
-        "redirect",
-        url_for("index", _external=True),
+        current_app.app_config["AUTH_SERVER_URL"] + "/login",
+        "redirect", next,
     )
     current_app.logger.info(f"Redirecting to login server at {login_url}")
 
@@ -100,7 +101,10 @@ def login():
 @auth_bp.route("/logout")
 def logout():
 
-    current_app.logger.info(f"User {current_user.id} logging out")
+    next = request.args.get("next", url_for("index", _external=True))
+
+    if current_user.is_authenticated:
+        current_app.logger.info(f"User {current_user.id} logging out")
 
     #uncache_user(session["session_id"])
     session.clear()
@@ -108,5 +112,5 @@ def logout():
     current_app.logger.info(f"ser logged out")
 
     flash("You have been logged out.", "info")
-    return redirect(url_for("index"))
+    return redirect(next)
 

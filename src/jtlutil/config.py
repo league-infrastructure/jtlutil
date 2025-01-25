@@ -59,6 +59,7 @@ def walk_up(d, f=None) -> List[Path]:
             paths.append(d)
 
     return paths
+
 def get_config_dirs(cwd=None, root=Path('/'), home=Path().home()) -> List[Path]:
     
     if cwd is None:
@@ -81,7 +82,7 @@ def get_config_dirs(cwd=None, root=Path('/'), home=Path().home()) -> List[Path]:
     ] 
 
 
-def find_config_file(file: str | List[str], dirs: List[str] | List[Path] = None) -> Path:
+def find_config_files(file: str | List[str], dirs: List[str] | List[Path] = None) -> Path:
     """Find the first instance of a config file, from  a list of possible files, 
     in a list of directories. Return the first file that exists. """
 
@@ -91,17 +92,32 @@ def find_config_file(file: str | List[str], dirs: List[str] | List[Path] = None)
     if dirs is None:
         dirs = get_config_dirs()
 
-
+    files = []
     for d in dirs:
         for f in file:
             p = Path(d) / f 
             if p.exists():
-                return p    
+                files.append(p)  
     
-    raise FileNotFoundError(f"Could not find any of {file} in {dirs}")
+    if files:
+        return files
+    else:
+        raise FileNotFoundError(f"Could not find any of {file} in {dirs}")
 
 
-def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> Config:
+
+def find_config_file(file: str | List[str], dirs: List[str] | List[Path] = None) -> Path:
+    files = find_config_files(file, dirs)
+    if len(files) > 1:
+        raise FileNotFoundError(f"Found multiple files: {files}")
+    return files[0]
+
+
+def get_config(file: str | Path | List[str] | List[Path] = None, 
+               dirs: List[str] | List[Path] = None) -> Config:
+
+    """ Get the first config file found. The is for when you 
+    just want one config file, but there may be multiple places for it. """
 
     if file is None:
         file = 'config.env'
@@ -120,6 +136,53 @@ def get_config(file: str | Path = None, dirs: List[str] | List[Path] = None) -> 
 
     return Config(config)
 
+def get_config_tree(config_root: Path, deploy_name='devel') -> Config:
+    """Assemble a configuration from a tree of config files. In this case
+    (* different from get_config) the config is split into multiple 
+    parts, and the parts are assembled into a single config object, and all of the
+    configurations are stored in a set of subdirs of a common root directory.
+    
+    For each of the dirs 'config' and secret', the function will look for a file
+    names 'config.env' and then '{deploy_name}.env' ( either 'devel' or 'prod' ) 
+    and combine them into a single config object.
+    
+    So, if they exist, these files will be read and combined: 
+    
+        'config/config.env',
+        '{deploy_name}.env',
+        'secrets/config.env',
+        'secrets/{deploy_name}.env',
+    
+    """
+    
+    root = Path(config_root).resolve()
+    
+    tree = [
+        'config/config.env',
+        'config/{deploy_name}.env',
+        'secrets/secret.env',
+        'secrets/{deploy_name}.env',
+    ]
+    
+    d = {}
+    configs = []
+    
+    for e in tree:
+        f =  root / Path(e.format(deploy_name=deploy_name))
+      
+        if f.exists():
+            d.update(dotenv_values(f))
+            configs.append(f)
+            
+    d.update(os.environ)
+    d['__CONFIG_PATH'] = configs
+    
+    return Config(d)
+            
+        
+    
+    
+    
 
 def path_interp(path: str, **kwargs) -> Tuple[str, Dict[str, Any]]:
     """

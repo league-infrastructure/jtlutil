@@ -12,7 +12,7 @@ from dotenv import dotenv_values
 from flask import Flask, current_app, session, g
 from flask_login import LoginManager, UserMixin
 from flask_session import Session
-from jtlutil.config import get_config
+from jtlutil.config import get_config, get_config_tree
 
 
 class User(UserMixin):
@@ -129,9 +129,41 @@ def configure_config(app):
     
     return config
 
+
+def configure_config_tree(app):
+        # Determine if we're running in production or development
+    if is_running_under_gunicorn():
+        deploy = "prod"
+        config_dir = '/app'
+    else:
+        deploy = "devel"
+        config_dir = Path().cwd()
+    
+        # Bypass the HTTPS requirement, because we are either running in development, 
+        # or behind a proxy than handles https. May be better to set the X-Forwarded-Proto, 
+        # but that looks really complicated. 
+        os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' 
+
+    config = get_config_tree(config_dir, deploy_name='devel')
+
+    # Set the Flask secret key
+    app.secret_key = config["SECRET_KEY"]
+    
+    # Resolve the path to the secrets file
+    if 'SECRETS_FILE_NAME' in config:
+        config["SECRETS_FILE"] = (Path(config['__CONFIG_PATH']).parent / config['SECRETS_FILE_NAME']).resolve()
+
+    # Store 
+    
+    app.app_config = config
+    
+    return config
+
+
 def configure_app_dir(app):
     
       # Configure the appdir
+
     app.app_config.app_dir = app_dir = Path(app.app_config.APP_DIR)
     
     if not app_dir.exists():

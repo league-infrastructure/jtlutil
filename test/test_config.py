@@ -110,3 +110,45 @@ def test_config_object():
     assert set(config.values()) == {'value1', 'value2', 'value3', 'value4'}
     
     
+# Run tests with output: 
+# pytest -s test/test_config.py::test_multi_config
+def test_multi_config():
+    
+    import pprint
+    
+    d = {
+    "DEVEL": "1",
+    "PRODUCTION": '',
+    "CONFIG": "CONFIG",
+    "DEVEL_SECRET": "secret",
+    "PROD_SECRET": None,
+    "CONFIG_SECRET": "secret",
+    }
+    
+    def _print_config(d, config):
+        for key, value in config.items():
+            if key in d:
+                print(f"{key} = {value}")
+
+    def _test(d, config):
+        for key, value in d.items():
+            if value is not None:
+                assert config.get(key) == value, f"Expected {key} to be {value}, but got {config.get(key)}"
+            else:
+                assert config.get(key) is None, f"Expected {key} to be None, but got {config.get(key)}"
+
+
+    config = get_config_tree(t2d/'app', deploy_name='devel')
+    _test(d, config)
+    
+    d = {
+        "DEVEL": "",
+        "PRODUCTION": '1',
+        "CONFIG": "CONFIG",
+        "DEVEL_SECRET": None,
+        "PROD_SECRET": "prod_secret",
+        "CONFIG_SECRET": "secret",
+    }
+
+    config = get_config_tree(t2d/'app', deploy_name='prod')
+    _test(d, config)

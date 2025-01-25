@@ -144,7 +144,8 @@ def configure_config_tree(app):
         # but that looks really complicated. 
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' 
 
-    config = get_config_tree(config_dir, deploy_name='devel')
+    app.logger.info(f"Configuring for deployment: {deploy}")
+    config = get_config_tree(config_dir, deploy_name=deploy)
 
     # Set the Flask secret key
     app.secret_key = config["SECRET_KEY"]

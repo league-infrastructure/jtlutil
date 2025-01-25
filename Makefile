@@ -12,7 +12,7 @@ compile:
 	uv pip compile pyproject.toml -o requirements.txt
 
 publish: build compile
-	git commit -a -m "Release version $(VERSION)"
+	git commit --allow-empty -a -m "Release version $(VERSION)"
 	git push
 	git tag v$(VERSION)
 	git push --tags

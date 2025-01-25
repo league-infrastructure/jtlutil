@@ -7,30 +7,28 @@ from flask import Blueprint
 from flask_login import (current_user, login_user, logout_user, LoginManager)
 from jtlutil.flask.flaskapp import insert_query_arg
 from jtlutil.jwtencode import decrypt_token, encrypt_token
-
+import logging
 from .flaskapp import User
 
 auth_bp = Blueprint("auth", __name__)
+
+logger = logging.getLogger(__name__)
 
 login_manager = LoginManager()
 login_manager.init_app(auth_bp)
 login_manager.login_view = 'auth.login'
 login_manager = auth_bp.login_manager = login_manager
 
-
 @auth_bp.login_manager.user_loader
-def load_user(user_id):
-    current_app.logger.info(f"Request to load  user with ID: {user_id}")
+def load_lm_user(user_id):
+    current_app.logger.info(f"Request to load  user from login manager with ID: {user_id}")
 
     if "user" in session:
-        current_app.logger.info(f"User data  already in session")
+        current_app.logger.info(f"User data already in session")
         user_data = session["user"]
         return User(user_data)
 
     return None
-
-
-
 
 
 def get_session_user(app,session_id):
@@ -63,6 +61,8 @@ def load_user(app):
     query_args = request.args.to_dict()
     ssoid = query_args.get("ssoid")
     
+    current_app.logger.info(f"Loading user with ssoid: {ssoid}")
+    
     if ssoid:
         # Decrypt it
         session_id = decrypt_token(
@@ -73,7 +73,12 @@ def load_user(app):
         
         user = User(user_data)
 
+        current_app.logger.info(f"Logging in user: {user.primary_email}")
+
         login_user(user)
+    else:
+        current_app.logger.error("No ssoid in query args")
+        assert False, "No ssoid in query args"
         
 
 

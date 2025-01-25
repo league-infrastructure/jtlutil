@@ -43,6 +43,22 @@ class User(UserMixin):
     def is_staff(self):
         return self.is_league and 'staff@jointheleague.org' in self.groups
         
+    @property
+    def role(self):
+        if self.is_admin:
+            return "admin"
+        elif self.is_staff:
+            return "staff"
+        elif self.is_student:
+            return "student"
+        elif self.is_league:
+            return "league"
+        else:
+            return "Public"
+        
+    @property
+    def is_public(self):
+        return not self.is_league
         
     def get_full_user_info(self):
         return self.user_data
@@ -81,7 +97,7 @@ def init_logger(app):
         app.logger.info("Logger initialized for gunicorn")
     else:
         logging.basicConfig(level=logging.INFO)
-        app.logger.setLevel(logging.INFO)
+        app.logger.setLevel(logging.DEBUG)
         app.logger.info("Logger initialized for flask")
 
 
@@ -130,15 +146,17 @@ def configure_app_dir(app):
 def setup_sqlite_sessions(app, session_expire_time=60*60*24*1): 
         # Setup sessions
         
+    
     db_path = app.app_config.db_dir / "sessions.db"
     app.config['SESSION_TYPE'] = 'sqlalchemy'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
     Session(app) # Initialize the session
     
     # Set session expiration time
-    app.config['PERMANENT_SESSION_LIFETIME'] = session_expire_time
+    #app.config['PERMANENT_SESSION_LIFETIME'] = session_expire_time
     app.config['SESSION_CLEANUP_N_REQUESTS'] = 100
     app.config['SESSION_SERIALIZATION_FORMAT'] = 'json'
+    app.config['SESSION_COOKIE_SECURE'] = True
     
     
 def insert_query_arg(url, key, value):

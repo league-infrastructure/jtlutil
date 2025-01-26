@@ -160,7 +160,6 @@ def configure_config_tree(app):
     
     return config
 
-
 def configure_app_dir(app):
     
       # Configure the appdir
@@ -170,7 +169,10 @@ def configure_app_dir(app):
     if not app_dir.exists():
         app_dir.mkdir(parents=True)
         
-    app.app_config.db_dir = db_dir = Path(app.app_config.DB_DIR)
+    app.app_config.data_dir = data_dir = Path(app.app_config.DATA_DIR) 
+        
+    app.app_config.db_dir = db_dir = app.app_config.data_dir / 'db'
+    
     if not db_dir.exists():
         db_dir.mkdir()
         
@@ -179,7 +181,6 @@ def configure_app_dir(app):
 def setup_sqlite_sessions(app, session_expire_time=60*60*24*1): 
         # Setup sessions
         
-    
     db_path = app.app_config.db_dir / "sessions.db"
     app.config['SESSION_TYPE'] = 'sqlalchemy'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'

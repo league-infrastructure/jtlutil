@@ -46,9 +46,14 @@ def ensure_network_exists(client, network_name, is_external=False, network_type=
 
         # Check if the network already exists
         existing_networks = client.networks.list(names=[network_name])
+       
         if existing_networks:
-            logger.debug(f"Network '{network_name}' already exists.")
-            return existing_networks[0]
+            for e in existing_networks:
+                if e.name == network_name:
+                    logger.debug(f"Network '{network_name}' already exists.")
+                    return e
+                
+            
 
         if is_external:
             raise ValueError(f"External network '{network_name}' does not exist.")
@@ -216,7 +221,8 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
         "VNC_URL": vnc_url,
         "KST_REPORTING_URL": config.KST_REPORTING_URL,
         "KST_CONTAINER_ID": name,
-		"KST_REPORT_RATE": config.KST_REPORT_RATE if hasattr(config, "KST_REPORT_RATE") else 30
+		"KST_REPORT_RATE": config.KST_REPORT_RATE if hasattr(config, "KST_REPORT_RATE") else 30,
+        "CS_DISABLE_GETTING_STARTED_OVERRIDE": "1" # Disable the getting started page
     }
     
     env_vars = {**_env_vars, **env_vars}

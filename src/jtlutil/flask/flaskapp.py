@@ -176,7 +176,7 @@ def configure_app_dir(app):
     if not db_dir.exists():
         db_dir.mkdir(parents=True)
         
-    app.logger.info(f"The data, fuckers!!!! ", app_dir, db_dir)
+   
     return app_dir, db_dir
 
 def setup_sqlite_sessions(app, session_expire_time=60*60*24*1): 

@@ -170,7 +170,7 @@ def configure_app_dir(app):
     if not app_dir.exists():
         app_dir.mkdir(parents=True)
         
-    app.app_config.db_dir = db_dir = app_dir / "db"
+    app.app_config.db_dir = db_dir = Path(app.app_config.DB_DIR)
     if not db_dir.exists():
         db_dir.mkdir()
         

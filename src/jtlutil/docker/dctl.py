@@ -275,3 +275,19 @@ def container_status(client, username):
         return containers[0].status
     
     return 'non-exist'
+
+def container_state(client):
+    """Return a list of containers and their states"""
+    l = container_list(client, all==True)
+    rows = []
+    for c in l:
+        stats = c.stats(stream=False)
+        mem = stats['memory_stats']['usage']
+        rows.append({
+            'id': c.id,
+            'state': c.status,
+            'name': c.name,
+            'memory_usage': mem,
+            'hostname': c.labels['caddy']
+        })
+    return rows

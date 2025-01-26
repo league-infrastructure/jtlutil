@@ -58,12 +58,10 @@ def load_user(app):
     session id in the cache and load the user data into the session.
     """
 
-    query_args = request.args.to_dict()
-    ssoid = query_args.get("ssoid")
-    
-    current_app.logger.info(f"Loading user with ssoid: {ssoid}")
+    ssoid = request.args.get("ssoid")
     
     if ssoid:
+        current_app.logger.info(f"Loading user with ssoid: {ssoid}")
         # Decrypt it
         session_id = decrypt_token(
             ssoid, bytes.fromhex(app.app_config["ENCRYPTION_KEY"])
@@ -76,10 +74,7 @@ def load_user(app):
         current_app.logger.info(f"Logging in user: {user.primary_email}")
 
         login_user(user)
-    else:
-        current_app.logger.error("No ssoid in query args")
-        #assert False, "No ssoid in query args"
-        
+
 
 
 @auth_bp.route("/login")

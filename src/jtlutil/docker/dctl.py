@@ -197,7 +197,10 @@ def create_novnc_container(client, config,  username, reset = False):
 
     return container
 
-def create_cs_container(client, config, image, username, env_vars, vnc_id=None, reset=False):
+def make_container_name(username):
+    return f"{slugify(username)}"   
+
+def create_cs_container(client, config, image, username, env_vars, vnc_id=None, reset=False, port=None):
     # Create the container
     
     containers = client.containers.list(filters={"label": f"jtl.codeserver.username={username}"}, all=True)
@@ -208,7 +211,7 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
     vnc_c = client.containers.get(vnc_id)   
        
     name = slugify(username)
-    container_name = f"{slugify(username)}"
+    container_name = make_container_name(username)
        
     vnc_host = vnc_c.labels.get("caddy")
     vnc_url = f"https://{vnc_host}"
@@ -239,6 +242,13 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
         "caddy.reverse_proxy": "{{upstreams 8080}}"
     }
     
+    internal_port = "8080"
+    
+    if port is True:
+        ports = [internal_port]
+    elif port is not None:
+        ports = [f"{port}:{internal_port}"]
+    
     container = create_container(
         client,
         image=image,
@@ -260,7 +270,8 @@ def create_cs_pair(client, config, image, username, env_vars = {}, reset = False
     
     """
     nvc = create_novnc_container(client, config, username=username, reset=reset)
-    pa = create_cs_container(client, config, image, username=username, env_vars = env_vars, vnc_id=nvc.id, reset=reset)
+    pa = create_cs_container(client, config, image, username=username, env_vars = env_vars, 
+                             vnc_id=nvc.id, reset=reset)
     return nvc, pa
 
 
@@ -276,6 +287,8 @@ def container_status(client, username):
     
     return 'non-exist'
 
+
+
 def container_state(client):
     """Return a list of containers and their states"""
     l = container_list(client, all==True)
@@ -288,6 +301,58 @@ def container_state(client):
             'state': c.status,
             'name': c.name,
             'memory_usage': mem,
-            'hostname': c.labels['caddy']
+            'hostname': c.labels['caddy'],
+            'port':  get_mapped_port(client, c.id, "8080")
         })
     return rows
+
+
+    
+def get_port_from_container(container, container_port):
+    """
+    Returns the mapped host port for a given container port from a container object.
+
+    Args:
+        container (docker.models.containers.Container): The container object.
+        container_port (str): The container port (e.g., '8080').
+
+    Returns:
+        str: The mapped host port if available, None otherwise.
+    """
+    try:
+        # Get the port bindings
+        ports = container.attrs.get("NetworkSettings", {}).get("Ports", {})
+        port_key = f"{container_port}/tcp"
+
+        if port_key in ports and ports[port_key]:
+            # Return the first HostPort found
+            return ports[port_key][0].get("HostPort")
+        else:
+            logger.debug(f"No mapping found for port {container_port}")
+            return None
+    except Exception as e:
+        logger.error(f"Error getting mapped port: {e}")
+        return None
+
+# Update get_mapped_port to use the new function
+def get_mapped_port(client, container_id, container_port):
+    """
+    Returns the mapped host port for a given container port.
+
+    Args:
+        container_id (str): The ID or name of the container.
+        container_port (str): The container port (e.g., '8080').
+
+    Returns:
+        str: The mapped host port if available, None otherwise.
+    """
+    try:
+        # Inspect the container
+        container = client.containers.get(container_id)
+        return get_port_from_container(container, container_port)
+    except docker.errors.NotFound:
+        logger.error(f"Container with ID {container_id} not found.")
+        return None
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        return None

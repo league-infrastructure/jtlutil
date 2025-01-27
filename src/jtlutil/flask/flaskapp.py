@@ -179,19 +179,36 @@ def configure_app_dir(app):
    
     return app_dir, db_dir
 
-def setup_sqlite_sessions(app, session_expire_time=60*60*24*1): 
-        # Setup sessions
-        
+def setup_sqlite_sessions(app, devel = False, session_expire_time=60*60*24*1): 
+    """
+    Sets up SQLite-backed sessions for a Flask app.
+
+    Args:
+        app (Flask): The Flask app instance.
+        devel (bool): Flag to indicate whether the app is in development mode.
+        session_expire_time (int): Session expiration time in seconds (default is 1 day).
+    """
+    # Setup sessions
     db_path = app.app_config.db_dir / "sessions.db"
     app.config['SESSION_TYPE'] = 'sqlalchemy'
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
-    Session(app) # Initialize the session
-    
+    Session(app)  # Initialize the session
+
     # Set session expiration time
-    #app.config['PERMANENT_SESSION_LIFETIME'] = session_expire_time
+    app.config['PERMANENT_SESSION_LIFETIME'] = session_expire_time
     app.config['SESSION_CLEANUP_N_REQUESTS'] = 100
     app.config['SESSION_SERIALIZATION_FORMAT'] = 'json'
-    app.config['SESSION_COOKIE_SECURE'] = True
+
+    # Adjust cookie security based on the environment
+    if devel:
+        # Development settings
+        app.config['SESSION_COOKIE_SECURE'] = False  # Allow cookies over HTTP
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Prevent cross-site issues
+    else:
+        # Production settings
+        app.config['SESSION_COOKIE_SECURE'] = True  # Require HTTPS for cookies
+        app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-site cookies if needed
+
     
     
 def insert_query_arg(url, key, value):

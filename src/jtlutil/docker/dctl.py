@@ -242,11 +242,14 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
         "caddy.reverse_proxy": "{{upstreams 8080}}"
     }
     
+    # This part sets up a port redirection for development, where we don't have
+    # a reverse proxy in front of the container.
+    
     internal_port = "8080"
     
     if port is True:
         ports = [internal_port]
-    elif port is not None:
+    elif port is not None and port is not False:
         ports = [f"{port}:{internal_port}"]
     
     container = create_container(
@@ -255,7 +258,7 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
         env_vars=env_vars,
         name=container_name,
         local_dir=None,
-        ports = ["8080"],
+        ports = ports,
         labels=labels,
         networks=["x11", "jtlctl", "caddy"],
     )
@@ -265,13 +268,13 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
 
     return container
 
-def create_cs_pair(client, config, image, username, env_vars = {}, reset = False):
+def create_cs_pair(client, config, image, username, env_vars = {}, reset = False, port=None):
     """ Create a pair of containers: a novnc container and a codeserver container.
     
     """
     nvc = create_novnc_container(client, config, username=username, reset=reset)
     pa = create_cs_container(client, config, image, username=username, env_vars = env_vars, 
-                             vnc_id=nvc.id, reset=reset)
+                             vnc_id=nvc.id, reset=reset, port=port)
     return nvc, pa
 
 

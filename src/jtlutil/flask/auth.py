@@ -4,7 +4,7 @@ import requests
 from flask import (current_app, flash, get_flashed_messages, 
                    redirect, render_template, request, session, url_for, g)
 from flask import Blueprint
-from flask_login import (current_user, login_user, logout_user, LoginManager)
+from flask_login import (current_user, login_user as fl_login_user, logout_user, LoginManager)
 from jtlutil.flask.flaskapp import insert_query_arg
 from jtlutil.jwtencode import decrypt_token, encrypt_token
 import logging
@@ -32,7 +32,7 @@ def load_lm_user(user_id):
 
 
 def get_session_user(app,session_id):
-    
+    """Get user data from the auth server, for a session id."""
     enc_key = bytes.fromhex(current_app.app_config['ENCRYPTION_KEY'])
     
     t = encrypt_token(session_id, enc_key)
@@ -51,6 +51,12 @@ def get_session_user(app,session_id):
         current_app.logger.error(f"Failed to fetch user data: {response.status_code} {response.text}")
         return None
 
+def login_user(user):
+    
+    fl_login_user(user)
+    session["user"] = user.user_data
+    return True
+
 def load_user(app):
     """When the authentication server redirects back to the app here, it will include a query
     parameter `ssoid` which is the encrypted session ID. This function decrypts
@@ -66,19 +72,15 @@ def load_user(app):
         session_id = decrypt_token(
             ssoid, bytes.fromhex(app.app_config["ENCRYPTION_KEY"])
         )
-        user_data = get_session_user(app, session_id)
-        session["user"] = user_data
         
-        user = User(user_data)
+        user_data = get_session_user(app, session_id)
 
-        current_app.logger.info(f"Logging in user: {user.primary_email}")
+        login_user(User(user_data))
+        
+        
 
-        login_user(user)
-
-
-
-@auth_bp.route("/login")
-def login():
+@auth_bp.route("/auth/ga_login")
+def jtl_ga_auth_login():
 
     next = request.args.get("next", url_for("index", _external=True))
     
@@ -93,8 +95,10 @@ def login():
     return redirect(login_url)
 
 
-@auth_bp.route("/logout")
-def logout():
+
+
+@auth_bp.route("/auth/logout")
+def jtl_auth_logout():
 
     next = request.args.get("next", url_for("index", _external=True))
 

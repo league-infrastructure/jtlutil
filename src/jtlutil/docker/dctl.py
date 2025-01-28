@@ -251,6 +251,8 @@ def create_cs_container(client, config, image, username, env_vars, vnc_id=None, 
         ports = [internal_port]
     elif port is not None and port is not False:
         ports = [f"{port}:{internal_port}"]
+    else:
+        ports = None
     
     container = create_container(
         client,
@@ -289,7 +291,6 @@ def container_status(client, username):
         return containers[0].status
     
     return 'non-exist'
-
 
 
 def container_state(client):

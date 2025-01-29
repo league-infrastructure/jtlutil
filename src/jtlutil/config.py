@@ -136,7 +136,7 @@ def get_config(file: str | Path | List[str] | List[Path] = None,
 
     return Config(config)
 
-def get_config_tree(config_root: Path, deploy_name='devel') -> Config:
+def get_config_tree(config_root: Path, deploy_name='devel', env_pos='last') -> Config:
     """Assemble a configuration from a tree of config files. In this case
     (* different from get_config) the config is split into multiple 
     parts, and the parts are assembled into a single config object, and all of the
@@ -153,6 +153,11 @@ def get_config_tree(config_root: Path, deploy_name='devel') -> Config:
         'secrets/config.env',
         'secrets/{deploy_name}.env',
     
+    The env_pos parameter controls when the environment variables are loaded. If it is
+    None, they are loaded last. If it is 'first', they are loaded first. If it is 'last',
+    they are loaded last, overwriting any values that were loaded from the files. If None
+     the env vars are not loaded. Defaults to 'last'
+    
     """
     
     root = Path(config_root).resolve()
@@ -165,6 +170,10 @@ def get_config_tree(config_root: Path, deploy_name='devel') -> Config:
     ]
     
     d = {}
+    
+    if env_pos == 'first':
+        d.update(os.environ)
+    
     configs = []
     
     for e in tree:
@@ -173,8 +182,9 @@ def get_config_tree(config_root: Path, deploy_name='devel') -> Config:
         if f.exists():
             d.update(dotenv_values(f))
             configs.append(f)
-            
-    d.update(os.environ)
+    if env_pos == 'last':
+        d.update(os.environ)
+        
     d['__CONFIG_PATH'] = configs
     
     return Config(d)

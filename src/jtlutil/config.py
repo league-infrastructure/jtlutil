@@ -104,14 +104,11 @@ def find_config_files(file: str | List[str], dirs: List[str] | List[Path] = None
     else:
         raise FileNotFoundError(f"Could not find any of {file} in {dirs}")
 
-
-
 def find_config_file(file: str | List[str], dirs: List[str] | List[Path] = None) -> Path:
     files = find_config_files(file, dirs)
     if len(files) > 1:
         raise FileNotFoundError(f"Found multiple files: {files}")
     return files[0]
-
 
 def get_config(file: str | Path | List[str] | List[Path] = None, 
                dirs: List[str] | List[Path] = None) -> Config:

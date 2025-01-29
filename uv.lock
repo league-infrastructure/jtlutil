@@ -436,7 +436,7 @@ wheels = [
 
 [[package]]
 name = "jtlutil"
-version = "0.1.4"
+version = "0.1.19"
 source = { editable = "." }
 dependencies = [
     { name = "docker" },
@@ -445,6 +445,7 @@ dependencies = [
     { name = "flask-session" },
     { name = "ipykernel" },
     { name = "names-generator" },
+    { name = "namesgenerator" },
     { name = "paramiko" },
     { name = "pycryptodome" },
     { name = "pyjwt" },
@@ -454,6 +455,7 @@ dependencies = [
     { name = "pytz" },
     { name = "requests" },
     { name = "sqlitedict" },
+    { name = "tenacity" },
 ]
 
 [package.dev-dependencies]
@@ -469,6 +471,7 @@ requires-dist = [
     { name = "flask-session", specifier = ">=0.8.0" },
     { name = "ipykernel", specifier = ">=6.29.5" },
     { name = "names-generator", specifier = ">=0.2.0" },
+    { name = "namesgenerator", specifier = ">=0.3" },
     { name = "paramiko", specifier = ">=3.5.0" },
     { name = "pycryptodome", specifier = ">=3.21.0" },
     { name = "pyjwt", specifier = ">=2.10.1" },
@@ -478,6 +481,7 @@ requires-dist = [
     { name = "pytz", specifier = ">=2024.2" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "sqlitedict", specifier = ">=2.1.0" },
+    { name = "tenacity", specifier = ">=9.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -613,6 +617,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/fd/de/60c26d1488db2ffdb
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bf/3d/7210fc4b1999771b875d96ffa30cf4384c7fe8f0a7d9874df4b753b7703e/names_generator-0.2.0-py3-none-any.whl", hash = "sha256:693e8e48e9a54a2a8f714b01d1bd70945743a15d4587059e7e4e16efc361be11", size = 26699 },
 ]
+
+[[package]]
+name = "namesgenerator"
+version = "0.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/40/09/560ba71405cdf8359b71f552155a33d5c8542a014fd2c4366f31af998cab/namesgenerator-0.3.tar.gz", hash = "sha256:50a03cc15e95edbf88a7ff86179f217f43eb2b2d6ee30fac3e9a20a54985b72e", size = 11319 }
 
 [[package]]
 name = "nest-asyncio"
@@ -968,6 +978,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/28/e3/55dcc2cfbc3ca9c29519eb6884dd1415ecb53b0e934862d3559ddcb7e20b/stack_data-0.6.3.tar.gz", hash = "sha256:836a778de4fec4dcd1dcd89ed8abff8a221f58308462e1c4aa2a3cf30148f0b9", size = 44707 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f1/7b/ce1eafaf1a76852e2ec9b22edecf1daa58175c090266e9f6c64afcd81d91/stack_data-0.6.3-py3-none-any.whl", hash = "sha256:d5558e0c25a4cb0853cddad3d77da9891a08cb85dd9f9f91b9f8cd66e511e695", size = 24521 },
+]
+
+[[package]]
+name = "tenacity"
+version = "9.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cd/94/91fccdb4b8110642462e653d5dcb27e7b674742ad68efd146367da7bdb10/tenacity-9.0.0.tar.gz", hash = "sha256:807f37ca97d62aa361264d497b0e31e92b8027044942bfa756160d908320d73b", size = 47421 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b6/cb/b86984bed139586d01532a587464b5805f12e397594f19f931c4c2fbfa61/tenacity-9.0.0-py3-none-any.whl", hash = "sha256:93de0c98785b27fcf659856aa9f54bfbd399e29969b0621bc7f762bd441b4539", size = 28169 },
 ]
 
 [[package]]

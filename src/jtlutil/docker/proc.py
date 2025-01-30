@@ -66,6 +66,10 @@ class Container(ProcessBase):
         """Return the current status of the container."""
         return self._object.status
 
+    def remove(self):
+        """Remove the process."""
+        self._object.remove(force=True)
+
 
 class Service(ProcessBase):
     """Represents a single Docker service (for Swarm mode)."""

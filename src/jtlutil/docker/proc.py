@@ -25,8 +25,6 @@ class ProcessBase:
     def id(self):
         """Return the ID of the process."""
         return self._object.id
-
-    
         
     @property
     def attrs(self):
@@ -44,6 +42,11 @@ class ProcessBase:
         """Return the status of the process."""
         raise NotImplementedError("Subclasses must implement the status property")
 
+   
+    def reload(self):
+        """Reload the object and refresh all its data."""
+        self._object.reload()
+
 
 class Container(ProcessBase):
     """Represents a single Docker container."""
@@ -52,9 +55,6 @@ class Container(ProcessBase):
         """Start the container."""
         self._object.start()
 
-    def stats(self):
-        """Get container stats."""
-        return self._object.stats(stream=False)
 
     @property
     def labels(self):
@@ -66,6 +66,24 @@ class Container(ProcessBase):
         """Return the current status of the container."""
         return self._object.status
 
+    @property
+    def stats(self):
+        """Get container stats."""
+        return self._object.stats(stream=False)
+
+    @property
+    def simple_stats(self):
+     
+        mem = self.stats['memory_stats']['usage']
+        return {
+            'id': self.o.id,
+            'state':self.o.status,
+            'name': self.o.name,
+            'memory_usage': mem,
+            'hostname': self.o.labels.get('caddy')
+        }
+     
+
     def remove(self):
         """Remove the process."""
         self._object.remove(force=True)
@@ -74,12 +92,17 @@ class Container(ProcessBase):
 class Service(ProcessBase):
     """Represents a single Docker service (for Swarm mode)."""
     
+    
+   
+    
     def _get_single_task(self):
         """Fetch the single task associated with this service."""
         tasks = self._object.tasks()
         if tasks:
             return tasks[0]  # Assuming only one task per service as specified.
         return None
+    
+
     
     def start(self):
         """Starting a service is not typically required (it auto-runs)."""
@@ -93,7 +116,7 @@ class Service(ProcessBase):
             if container_id:
                 container = self.client.containers.get(container_id)
                 return container.stats(stream=False)
-        raise NotImplementedError("Service stats must be monitored externally")
+    
 
     @property
     def labels(self):

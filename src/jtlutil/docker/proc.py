@@ -76,9 +76,9 @@ class Container(ProcessBase):
      
         mem = self.stats['memory_stats']['usage']
         return {
-            'id': self.o.id,
+            'container_id': self.o.id,
             'state':self.o.status,
-            'name': self.o.name,
+            'container_name': self.o.name,
             'memory_usage': mem,
             'hostname': self.o.labels.get('caddy')
         }
@@ -93,8 +93,6 @@ class Service(ProcessBase):
     """Represents a single Docker service (for Swarm mode)."""
     
     
-   
-    
     def _get_single_task(self):
         """Fetch the single task associated with this service."""
         tasks = self._object.tasks()
@@ -102,7 +100,6 @@ class Service(ProcessBase):
             return tasks[0]  # Assuming only one task per service as specified.
         return None
     
-
     
     def start(self):
         """Starting a service is not typically required (it auto-runs)."""
@@ -117,6 +114,29 @@ class Service(ProcessBase):
                 container = self.client.containers.get(container_id)
                 return container.stats(stream=False)
     
+    def containers_info(self):
+        
+        for t in self.tasks:
+            
+            labels = t['Spec']['ContainerSpec']['Labels']
+            hostname = labels.get('caddy')
+            labels = {k: v for k, v in labels.items() if not k.startswith('caddy')}
+            
+            yield {
+                'container_id':t["Status"].get("ContainerStatus", {}).get("ContainerID"),
+                'node_id': t['NodeID'],
+                'state': t['Status']['State'],
+                'hostname': hostname,
+                'timestamp': t['Status']['Timestamp'],
+                'labels': labels,
+                
+            }
+    
+
+    @property
+    def tasks(self):
+        """Return the tasks associated with the service."""
+        return self._object.tasks()
 
     @property
     def labels(self):

@@ -1,11 +1,12 @@
 import docker
 import logging
+import datetime 
 from typing import List, Dict, Any, Optional
 from .proc import Container, Service
 
 logger = logging.getLogger(__name__)
 
-class ProcessGroup:
+class DockerManager:
     """Base class for managing both Docker Containers and Services."""
 
     def __init__(self, client: Any, env: Optional[Dict[str, str]] = None, 
@@ -22,7 +23,31 @@ class ProcessGroup:
         
         self.info = self.client.info()
         
-
+    @classmethod
+    def new(self, client: Any, env: Optional[Dict[str, str]] = None, 
+                 network: Optional[List[str]] = None, 
+                 labels: Optional[Dict[str, str]] = None, hostname_f = None,  mongo_client=None) -> Any:
+        
+        # Either of these should identify a swarm. A swarm will
+        # have a node_id in it's client info, and also should have
+        # swarm attrs. 
+        
+        if isinstance(client, str):
+            client = docker.DockerClient(base_url=client)
+        
+        node_id = client.info()['Swarm']['NodeID']
+        attrs = client.swarm.attrs 
+        
+        if attrs:
+            if mongo_client is None:
+                return ServicesManager(client, env, network, labels, hostname_f=hostname_f)
+            else:
+                return CodeServerManager(client, env, network, labels, hostname_f=hostname_f, mongo_client=mongo_client)
+        else:
+            assert mongo_client is None, "Mongo client only usable in swarm mode"
+            return ContainersManager(client, env, network, labels)
+    
+    
     @property
     def name(self):
         return self.info['Name']
@@ -67,7 +92,7 @@ class ProcessGroup:
             self.client.networks.create(name, driver=driver, internal=internal, ingress=ingress)
 
 
-class ContainersManager(ProcessGroup):
+class ContainersManager(DockerManager):
     """Manages Docker Containers with a consistent interface."""
     
     def run(self, image: str, name: str = None, labels: Dict[str, str] = {}, 
@@ -145,19 +170,16 @@ class ContainersManager(ProcessGroup):
             
         return None # Didn't find anything, or killed the one we found. 
 
-  
 
-
-    @property
-    def simple_stats(self):
+    def simple_stats(self, filters: Dict = None):
         """Get stats for all containers."""
-        for c in self.list():
+        for c in self.list(filters=filters):
             ss =  c.simple_stats
-            ss['node'] = self.name
+            ss['node_name'] = self.name
             yield ss
      
 
-class ServicesManager(ProcessGroup):
+class ServicesManager(DockerManager):
     """Manages Docker Services (Swarm mode) with a consistent interface."""
     
     def __init__(self, client: Any, env: Dict[str, str] = {}, 
@@ -238,15 +260,25 @@ class ServicesManager(ProcessGroup):
         """List all services."""
         return [Service(self.client, svc) for svc in self.client.services.list(filters=filters, status=status, **kwargs)]
 
-
     @property
-    def simple_stats(self):
+    def containers(self):
+        for s in self.list():
+            d = {
+                'service_id': s.id,
+                'service_name': s.name
+            }
+            for ci in s.containers_info():
+                yield dict(**d, **ci)
+                
+
+
+    def simple_stats(self, filters: Dict = None):
         """Get stats for all services."""
        
         for n in self.nodes:
-            yield from n.simple_stats
+            yield from n.simple_stats(filters=filters)
             
-  
+
     def only_one(self, filters: Dict, reset: bool = False) -> None:
         """Ensure only one service is running."""
         
@@ -282,36 +314,53 @@ class ServicesManager(ProcessGroup):
         
         super().ensure_network(name, driver=driver, internal=internal, ingress=ingress)
         
-        
-class CodeServeManager(ServicesManager):
+class CodeServerManager(ServicesManager):
     
     def __init__(self, client: Any, env: Dict[str, str] = {}, 
                  network: List[str] = [], 
-                 labels: Dict[str, str] = {}) -> None:
+                 labels: Dict[str, str] = {}, hostname_f=None,  mongo_client=None) -> None:
         """
         Initialize the code serve manager.
         :param client: Docker client instance.
         """
+        from .db import DockerContainerStatsRepository
         
-        def hostname_f(node_name):
+    
+        def _hostname_f(node_name):
             return f"{node_name}.jointheleague.org"
+        
+        hostname_f = hostname_f or _hostname_f
+        
+        self.mongo_client = mongo_client
+        self.repo = DockerContainerStatsRepository(self.mongo_client)
         
         super().__init__(client, env, network, labels, hostname_f)
     
-    def collect_stats(self, mongo_client):
-        """Collect container stats."""
+    def collect_stats(self, filters: Dict ={"label": "jtl.codeserver"}):
+        """Collect container stats and store them in the database. This will collect
+        memory usage, but it is slow. """
         
-        from .db import DockerContainerStatsRepository
+        #self.repo.mark_all_unknown()
         
-        repo = DockerContainerStatsRepository(mongo_client)
-        
-        for n in self.simple_stats:
-            logger.debug(f"Adding stats for {n['name']}")   
-            repo.add(n)
+        for n in self.simple_stats(filters=filters): 
+            self.repo.update(n)
             
+        #self.repo.remove_unknown()
+         
+    def collect_containers(self, filters: Dict ={"label": "jtl.codeserver"}):
+        """Faster than collect_stats, but does not collect memory usage."""
         
+        #self.repo.mark_all_unknown()
+        
+        for n in self.containers:  
+            if 'jtl.codeserver' in n['labels']:     
+                self.repo.update(n)
             
+        #self.repo.remove_unknown()
+         
             
+    def update_stats(self, container_id: str, data):
         
+        data['container_id'] = container_id
         
-        
+        return self.repo.update(data)

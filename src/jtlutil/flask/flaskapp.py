@@ -87,17 +87,22 @@ def get_payload(request) -> dict:
 
     return payload
 
-
-def init_logger(app):
+def init_logger(app,log_level=None):
     """Initialize the logger for the app, either production or debug"""
-    if is_running_under_gunicorn():
+    
+   
+    if log_level is not None:
+        logging.basicConfig(level=logging.ERROR)
+        app.logger.setLevel(log_level)
+        app.logger.info("Logger initialized for debug")
+    elif is_running_under_gunicorn():
         gunicorn_logger = logging.getLogger("gunicorn.error")
         app.logger.handlers = gunicorn_logger.handlers
         app.logger.setLevel(gunicorn_logger.level)
         app.logger.info("Logger initialized for gunicorn")
     else:
         logging.basicConfig(level=logging.INFO)
-        app.logger.setLevel(logging.DEBUG)
+        app.logger.setLevel(logging.INFO)
         app.logger.info("Logger initialized for flask")
 
 
@@ -189,9 +194,10 @@ def setup_sqlite_sessions(app, devel = False, session_expire_time=60*60*24*1):
         session_expire_time (int): Session expiration time in seconds (default is 1 day).
     """
     # Setup sessions
-    db_path = app.app_config.db_dir / "sessions.db"
-    app.config['SESSION_TYPE'] = 'sqlalchemy'
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+   
+    app.config['SESSION_TYPE'] = 'mongodb'
+    app.config['SESSION_MONGODB'] = app.mongodb.cx
+    
     Session(app)  # Initialize the session
 
     # Set session expiration time

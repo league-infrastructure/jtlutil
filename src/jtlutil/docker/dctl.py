@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 import docker
 
 
-def define_cs_container(config, image, username, env_vars={}, port=None):
+def define_cs_container(config, image, username, hostname_template, env_vars={}, port=None):
     # Create the container
     
     name = slugify(username)
@@ -20,7 +20,7 @@ def define_cs_container(config, image, username, env_vars={}, port=None):
        
     password = "code4life"
     
-    hostname = config.HOSTNAME_TEMPLATE.format(username=slugify(username))
+    hostname = hostname_template.format(username=slugify(username))
 
     _env_vars = {
         "PASSWORD": password,

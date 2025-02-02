@@ -34,6 +34,25 @@ class DockerContainerStats(BaseModel):
     utilization_2: Optional[float] = None # Arbitrary measure of how busy the container is
     
     data: Optional[dict] = None
+    labels: Optional[dict] = None
+    
+    @property
+    def password(self):
+         return self.labels['jt.codeserver.password'] 
+    
+    @property
+    def heart_beat_ago(self):
+        try:
+            return datetime.now().astimezone() - self.last_heartbeat
+        except:
+            return None
+        
+    @property
+    def seconds_since_last_stats(self):
+        try:
+            return (datetime.now().astimezone() - self.last_stats).total_seconds()
+        except:
+            return None
     
 class DockerContainerStatsRepository:
     def __init__(self, client: MongoClient):
@@ -89,19 +108,15 @@ class DockerContainerStatsRepository:
     def remove_unknown(self):
         """Remove all containers that are in the unknown state."""
         self.collection.delete_many({"state": "unknown"})
-       
 
-    def find_by_name(self, name: str) -> Optional[DockerContainerStats]:
-        result = self.collection.find_one({"name": name})
+    def find_by_service_id(self, service_id: str) -> Optional[DockerContainerStats]:
+        result = self.collection.find_one({"service_id": service_id})
         if result:
             return DockerContainerStats(**result)
         return None
-
-    def find_by_id(self, id: str) -> Optional[DockerContainerStats]:
-        result = self.collection.find_one({"id": id})
-        if result:
-            return DockerContainerStats(**result)
-        return None
+    
+    def remove_by_id(self, service_id: str):
+        self.collection.delete_one({"service_id": service_id})
     
     @property
     def all(self):

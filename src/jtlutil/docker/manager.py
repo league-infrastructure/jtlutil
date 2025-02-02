@@ -42,7 +42,7 @@ class DockerManager:
             if mongo_client is None:
                 return ServicesManager(client, env, network, labels, hostname_f=hostname_f)
             else:
-                return CodeServerManager(client, env, network, labels, hostname_f=hostname_f, mongo_client=mongo_client)
+                return DbServicesManager(client, env, network, labels, hostname_f=hostname_f, mongo_client=mongo_client)
         else:
             assert mongo_client is None, "Mongo client only usable in swarm mode"
             return ContainersManager(client, env, network, labels)
@@ -182,6 +182,8 @@ class ContainersManager(DockerManager):
 class ServicesManager(DockerManager):
     """Manages Docker Services (Swarm mode) with a consistent interface."""
     
+    service_class = Service
+    
     def __init__(self, client: Any, env: Dict[str, str] = {}, 
                  network: List[str] = [], 
                  labels: Dict[str, str] = {}, hostname_f = None) -> None:
@@ -249,26 +251,22 @@ class ServicesManager(DockerManager):
             restart_policy=restart_policy,
             **kwargs
         )
-        return Service(self.client, service)
+        return self.service_class(self.client, service)
 
     def get(self, name_or_id: str) -> Any:
         """Retrieve a service by name or ID."""
         service = self.client.services.get(name_or_id)
-        return Service(self.client, service)
+        return self.service_class(self.client, service)
 
     def list(self, filters: Dict = None, status: bool = False, all=None,  **kwargs: Any) -> List[Any]:
         """List all services."""
-        return [Service(self.client, svc) for svc in self.client.services.list(filters=filters, status=status, **kwargs)]
+        return [self.service_class(self.client, svc) for svc in self.client.services.list(filters=filters, status=status, **kwargs)]
 
     @property
     def containers(self):
         for s in self.list():
-            d = {
-                'service_id': s.id,
-                'service_name': s.name
-            }
             for ci in s.containers_info():
-                yield dict(**d, **ci)
+                yield ci
                 
 
 
@@ -314,7 +312,7 @@ class ServicesManager(DockerManager):
         
         super().ensure_network(name, driver=driver, internal=internal, ingress=ingress)
         
-class CodeServerManager(ServicesManager):
+class DbServicesManager(ServicesManager):
     
     def __init__(self, client: Any, env: Dict[str, str] = {}, 
                  network: List[str] = [], 
@@ -325,11 +323,6 @@ class CodeServerManager(ServicesManager):
         """
         from .db import DockerContainerStatsRepository
         
-    
-        def _hostname_f(node_name):
-            return f"{node_name}.jointheleague.org"
-        
-        hostname_f = hostname_f or _hostname_f
         
         self.mongo_client = mongo_client
         self.repo = DockerContainerStatsRepository(self.mongo_client)
@@ -347,7 +340,7 @@ class CodeServerManager(ServicesManager):
             
         #self.repo.remove_unknown()
          
-    def collect_containers(self, filters: Dict ={"label": "jtl.codeserver"}):
+    def collect_containers(self, filters: Dict ={"label": "jtl.codeserver"}, generate=False):
         """Faster than collect_stats, but does not collect memory usage."""
         
         #self.repo.mark_all_unknown()
@@ -355,6 +348,8 @@ class CodeServerManager(ServicesManager):
         for n in self.containers:  
             if 'jtl.codeserver' in n['labels']:     
                 self.repo.update(n)
+                if generate:
+                    yield n
             
         #self.repo.remove_unknown()
          
@@ -364,3 +359,5 @@ class CodeServerManager(ServicesManager):
         data['container_id'] = container_id
         
         return self.repo.update(data)
+
+

@@ -113,7 +113,8 @@ class Service(ProcessBase):
             if container_id:
                 container = self.client.containers.get(container_id)
                 return container.stats(stream=False)
-    
+
+
     def containers_info(self):
         
         for t in self.tasks:
@@ -123,6 +124,8 @@ class Service(ProcessBase):
             labels = {k: v for k, v in labels.items() if not k.startswith('caddy')}
             
             yield {
+                'service_id': self.id,
+                'service_name': self.name,
                 'container_id':t["Status"].get("ContainerStatus", {}).get("ContainerID"),
                 'node_id': t['NodeID'],
                 'state': t['Status']['State'],

@@ -132,16 +132,16 @@ class ContainersManager(DockerManager):
             network.connect(container)
             
         
-        return Container(self.client, container)
+        return Container(self, container)
 
     def get(self, name_or_id: str) -> Any:
         """Retrieve a container by name or ID."""
         container = self.client.containers.get(name_or_id)
-        return Container(self.client, container)
+        return Container(self, container)
 
     def list(self, filters: Dict=None, all=False, status=None, **kwargs: Any) -> List[Any]:
         """List all containers."""
-        return [Container(self.client, cont) for cont in self.client.containers.list(filters=filters, all=all, **kwargs)]
+        return [Container(self, cont) for cont in self.client.containers.list(filters=filters, all=all, **kwargs)]
 
     def only_one(self, filters: Dict, reset: bool = False) -> None:
         """Ensure only one container is running."""
@@ -251,16 +251,16 @@ class ServicesManager(DockerManager):
             restart_policy=restart_policy,
             **kwargs
         )
-        return self.service_class(self.client, service)
+        return self.service_class(self, service)
 
     def get(self, name_or_id: str) -> Any:
         """Retrieve a service by name or ID."""
         service = self.client.services.get(name_or_id)
-        return self.service_class(self.client, service)
+        return self.service_class(self, service)
 
     def list(self, filters: Dict = None, status: bool = False, all=None,  **kwargs: Any) -> List[Any]:
         """List all services."""
-        return [self.service_class(self.client, svc) for svc in self.client.services.list(filters=filters, status=status, **kwargs)]
+        return [self.service_class(self, svc) for svc in self.client.services.list(filters=filters, status=status, **kwargs)]
 
     @property
     def containers(self):
@@ -343,7 +343,7 @@ class DbServicesManager(ServicesManager):
     def collect_containers(self, filters: Dict ={"label": "jtl.codeserver"}, generate=False):
         """Faster than collect_stats, but does not collect memory usage."""
         
-        #self.repo.mark_all_unknown()
+        self.repo.mark_all_unknown()
         
         for n in self.containers:  
             if 'jtl.codeserver' in n['labels']:     
@@ -351,7 +351,7 @@ class DbServicesManager(ServicesManager):
                 if generate:
                     yield n
             
-        #self.repo.remove_unknown()
+        self.repo.remove_unknown()
          
             
     def update_stats(self, container_id: str, data):

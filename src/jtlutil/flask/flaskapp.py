@@ -92,18 +92,18 @@ def init_logger(app,log_level=None):
     
    
     if log_level is not None:
-        logging.basicConfig(level=logging.ERROR)
+        
         app.logger.setLevel(log_level)
-        app.logger.info("Logger initialized for debug")
+        app.logger.debug("Logger initialized for debug")
     elif is_running_under_gunicorn():
         gunicorn_logger = logging.getLogger("gunicorn.error")
         app.logger.handlers = gunicorn_logger.handlers
         app.logger.setLevel(gunicorn_logger.level)
-        app.logger.info("Logger initialized for gunicorn")
+        app.logger.debug("Logger initialized for gunicorn")
     else:
-        logging.basicConfig(level=logging.INFO)
+        #logging.basicConfig(level=logging.INFO)
         app.logger.setLevel(logging.INFO)
-        app.logger.info("Logger initialized for flask")
+        app.logger.debug("Logger initialized for flask")
 
 
 def configure_config(app):

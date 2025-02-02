@@ -1,12 +1,13 @@
 class ProcessBase:
     """Base class for both Container and Service objects."""
-    def __init__(self, client, obj):
+    def __init__(self, manager, obj):
         """
         Initialize a process object.
         :param client: Docker client instance.
         :param obj: The low-level container or service object from Docker SDK.
         """
-        self.client = client
+        self.manager = manager
+        self.client = manager.client
         self._object = obj
 
     def reload(self):
@@ -89,6 +90,10 @@ class Container(ProcessBase):
         self._object.remove(force=True)
 
 
+    def stop(self):
+        """Remove the process."""
+        self._object.stop()
+
 class Service(ProcessBase):
     """Represents a single Docker service (for Swarm mode)."""
     
@@ -159,3 +164,7 @@ class Service(ProcessBase):
     def name(self):
         """Return the name of the service."""
         return self._object.attrs.get("Spec", {}).get("Name", "Unnamed")
+    
+    def stop(self):
+        """Remove the process."""
+        self._object.remove()

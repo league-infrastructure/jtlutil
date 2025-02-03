@@ -26,6 +26,7 @@ class DockerContainerStats(BaseModel):
     timestamp: Optional[datetime] = None
     
     hostname: Optional[str] = None
+    username: Optional[str] = None
     memory_usage: Optional[int] = None
     last_stats: Optional[datetime] = None
     last_heartbeat: Optional[datetime] = None # last time the container service reported being alive
@@ -83,6 +84,9 @@ class DockerContainerStatsRepository:
             record['last_stats'] = datetime.now().astimezone().isoformat()
         
 
+        if record['username'] is None:
+            record['username'] = record['labels'].get('jtl.codeserver.username')
+
         try:
             if 'container_id' not in record:
                 raise ValueError("Record must have an 'container_id' value")
@@ -118,6 +122,21 @@ class DockerContainerStatsRepository:
             return DockerContainerStats(**result)
         return None
     
+    
+    def find_by_hostname(self, hostname: str) -> Optional[DockerContainerStats]:
+        result = self.collection.find_one({"hostname": hostname})
+        if result:
+            return DockerContainerStats(**result)
+        return None 
+    
+    def find_by_username_label(self, username: str) -> Optional[DockerContainerStats]:
+
+       
+        result = self.collection.find_one({"username": username})
+        if result:
+            return DockerContainerStats(**result)
+        return None 
+    
     def remove_by_id(self, service_id: str):
         self.collection.delete_one({"service_id": service_id})
     
@@ -130,4 +149,5 @@ class DockerContainerStatsRepository:
         
         
     def delete_all(self):
+      
         self.collection.delete_many({})

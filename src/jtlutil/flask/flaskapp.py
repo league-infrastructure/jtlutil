@@ -185,7 +185,7 @@ def configure_app_dir(app):
    
     return app_dir, db_dir
 
-def setup_sqlite_sessions(app, devel = False, session_expire_time=60*60*24*1): 
+def setup_sessions(app, devel = False, session_expire_time=60*60*24*1): 
     """
     Sets up SQLite-backed sessions for a Flask app.
 

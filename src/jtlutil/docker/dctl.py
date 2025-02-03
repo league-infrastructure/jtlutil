@@ -93,13 +93,6 @@ def process_port_bindings(ports):
 def make_container_name(username):
     return f"{slugify(username)}"   
     
-def container_status(client, username):
-    containers = client.containers.list(filters={"label": f"jtl.codeserver.username={username}"}, all=True)
-    
-    if containers:
-        return containers[0].status
-    
-    return 'non-exist'
 
 
     

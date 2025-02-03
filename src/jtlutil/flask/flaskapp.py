@@ -137,9 +137,9 @@ def configure_config(app):
 
 def configure_config_tree(app):
         # Determine if we're running in production or development
-    if is_running_under_gunicorn():
+    if is_running_under_gunicorn() and Path("/app").is_dir():
         deploy = "prod"
-        config_dir = '/app'
+        config_dir  = '/app'
     else:
         deploy = "devel"
         config_dir = Path().cwd()
@@ -151,6 +151,7 @@ def configure_config_tree(app):
 
     app.logger.info(f"Configuring for deployment: {deploy}")
     config = get_config_tree(config_dir, deploy_name=deploy)
+
 
     # Set the Flask secret key
     app.secret_key = config["SECRET_KEY"]

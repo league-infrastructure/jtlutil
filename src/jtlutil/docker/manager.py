@@ -3,6 +3,7 @@ import logging
 import datetime 
 from typing import List, Dict, Any, Optional
 from .proc import Container, Service
+from pymongo.database import Database as MongoDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -314,18 +315,22 @@ class ServicesManager(DockerManager):
         
 class DbServicesManager(ServicesManager):
     
-    def __init__(self, client: Any, env: Dict[str, str] = {}, 
+    def __init__(self, client: MongoDatabase, env: Dict[str, str] = {}, 
                  network: List[str] = [], 
-                 labels: Dict[str, str] = {}, hostname_f=None,  mongo_client=None) -> None:
+                 labels: Dict[str, str] = {}, hostname_f=None,  mongo_db=None) -> None:
         """
         Initialize the code serve manager.
         :param client: Docker client instance.
         """
         from .db import DockerContainerStatsRepository
         
+        if self.mongo_db is not None:
+            assert isinstance(mongo_db, MongoDatabase), f"Expected a MongoDatabase, got {type(db)}"
+            self.repo = DockerContainerStatsRepository(self.mongo_db)
+            
+        self.client = client
+        self.mongo_db = mongo_db
         
-        self.mongo_client = mongo_client
-        self.repo = DockerContainerStatsRepository(self.mongo_client)
         
         super().__init__(client, env, network, labels, hostname_f)
     

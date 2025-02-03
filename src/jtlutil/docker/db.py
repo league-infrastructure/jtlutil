@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from pymongo import MongoClient
+from pymongo.database import Database as MongoDatabase
 from pymongo.errors import DuplicateKeyError
 from typing import Union
 from datetime import datetime
@@ -55,8 +55,11 @@ class DockerContainerStats(BaseModel):
             return None
     
 class DockerContainerStatsRepository:
-    def __init__(self, client: MongoClient):
-        self.db = client['docker']
+    def __init__(self, db: MongoDatabase ):
+        
+        assert isinstance(db, MongoDatabase)
+        
+        self.db = db
         self.collection = self.db['container_stats']
         
         #self.collection.create_index("name", unique=True)

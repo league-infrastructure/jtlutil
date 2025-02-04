@@ -135,14 +135,14 @@ def configure_config(app):
     return config
 
 
-def configure_config_tree():
+def configure_config_tree(start_dir = None):    
         # Determine if we're running in production or development
     if is_running_under_gunicorn() and Path("/app").is_dir():
         deploy = "prod"
         config_dir  = '/app'
     else:
         deploy = "devel"
-        config_dir = Path().cwd()
+        config_dir = Path(start_dir) if start_dir else Path().cwd()
     
         # Bypass the HTTPS requirement, because we are either running in development, 
         # or behind a proxy than handles https. May be better to set the X-Forwarded-Proto, 

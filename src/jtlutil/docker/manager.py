@@ -256,8 +256,12 @@ class ServicesManager(DockerManager):
 
     def get(self, name_or_id: str) -> Any:
         """Retrieve a service by name or ID."""
-        service = self.client.services.get(name_or_id)
-        return self.service_class(self, service)
+        try:
+            service = self.client.services.get(name_or_id)
+            return self.service_class(self, service)
+        except docker.errors.NotFound:
+            return None
+            
 
     def list(self, filters: Dict = None, status: bool = False, all=None,  **kwargs: Any) -> List[Any]:
         """List all services."""
@@ -338,23 +342,28 @@ class DbServicesManager(ServicesManager):
         """Collect container stats and store them in the database. This will collect
         memory usage, but it is slow. """
         
-        #self.repo.mark_all_unknown()
+        self.repo.mark_all_unknown()
         
         for n in self.simple_stats(filters=filters): 
             self.repo.update(n)
             
-        #self.repo.remove_unknown()
+        self.repo.remove_unknown()
          
     def collect_containers(self, filters: Dict ={"label": "jtl.codeserver"}, generate=False):
         """Faster than collect_stats, but does not collect memory usage."""
-        
+        from pydantic import ValidationError
+
         self.repo.mark_all_unknown()
         
         for n in self.containers:  
             if 'jtl.codeserver' in n['labels']:     
-                self.repo.update(n)
-                if generate:
-                    yield n
+                try:
+                    self.repo.update(n)
+                    if generate:
+                        yield n
+                except ValidationError as e:
+                    logger.error(f"Error validating container info: {e}")
+                    continue
             
         self.repo.remove_unknown()
          

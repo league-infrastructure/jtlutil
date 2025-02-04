@@ -107,8 +107,9 @@ class DockerContainerStatsRepository:
 
     def mark_all_unknown(self):
         """Mark all running containers as unknown, so we can find the ones that are no longer running."""
+       
         self.collection.update_many(
-            {"state": "running"},
+            {"state": {"$ne": "unknown"}},
             {"$set": {"state": "unknown"}}
         )
        

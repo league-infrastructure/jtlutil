@@ -45,6 +45,22 @@ class Config:
     def items(self) -> List[Tuple[str, Any]]:
         return list(self._config_dict.items())
 
+    def to_dict(self) -> Dict[str, Any]:
+        return self._config_dict.copy()
+
+def find_parent_dir():
+    cwd = Path.cwd()
+    
+    for i in range(3):
+        if (cwd / 'config').exists() or (cwd / 'secrets').exists():
+            return cwd
+        try:
+            cwd = cwd.parent
+        except:
+            break
+
+    raise FileNotFoundError("No directory with 'config' or 'secrets' found")
+
 def walk_up(d, f=None) -> List[Path]:
     d = Path(d).resolve()
     paths = []

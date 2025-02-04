@@ -186,8 +186,6 @@ def get_config_tree(config_root: Path, deploy_name='devel', env_pos='last') -> C
     
     return Config(d)
             
-        
-    
     
     
 

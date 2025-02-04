@@ -122,20 +122,20 @@ def configure_config(app):
     config = get_config(config_file_name)
     
     # Set the Flask secret key
-    app.secret_key = config["SECRET_KEY"]
+    app.secret_key = config.get("SECRET_KEY")
     
     # Resolve the path to the secrets file
     if 'SECRETS_FILE_NAME' in config:
         config["SECRETS_FILE"] = (Path(config['__CONFIG_PATH']).parent / config['SECRETS_FILE_NAME']).resolve()
 
     # Store 
-    
+
     app.app_config = config
     
     return config
 
 
-def configure_config_tree(app):
+def configure_config_tree():
         # Determine if we're running in production or development
     if is_running_under_gunicorn() and Path("/app").is_dir():
         deploy = "prod"
@@ -149,20 +149,14 @@ def configure_config_tree(app):
         # but that looks really complicated. 
         os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' 
 
-    app.logger.info(f"Configuring for deployment: {deploy}")
+
     config = get_config_tree(config_dir, deploy_name=deploy)
 
-
-    # Set the Flask secret key
-    app.secret_key = config["SECRET_KEY"]
     
     # Resolve the path to the secrets file
     if 'SECRETS_FILE_NAME' in config:
         config["SECRETS_FILE"] = (Path(config['__CONFIG_PATH']).parent / config['SECRETS_FILE_NAME']).resolve()
 
-    # Store 
-    
-    app.app_config = config
     
     return config
 

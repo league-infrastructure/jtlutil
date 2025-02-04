@@ -12,72 +12,6 @@ logger = logging.getLogger(__name__)
 import docker
 
 
-def define_cs_container(config, image, username, hostname_template, env_vars={}, port=None):
-    # Create the container
-    
-    name = slugify(username)
-    container_name = make_container_name(username)
-       
-    password = "code4life"
-    
-    hostname = hostname_template.format(username=slugify(username))
-
-    _env_vars = {
-        "PASSWORD": password,
-        "DISPLAY": ":0",
-        "VNC_URL": f"https://{hostname}/vnc/",
-        "KST_REPORTING_URL": config.KST_REPORTING_URL,
-        "KST_CONTAINER_ID": name,
-		"KST_REPORT_RATE": config.KST_REPORT_RATE if hasattr(config, "KST_REPORT_RATE") else 30,
-        "CS_DISABLE_GETTING_STARTED_OVERRIDE": "1" # Disable the getting started page
-    }
-    
-    env_vars = {**_env_vars, **env_vars}
-    
-    labels = {
-        "jtl": 'true', 
-        "jtl.codeserver": 'true',  
-        "jtl.codeserver.username": username,
-        "jt.codeserver.password": password,
-        "jtl.codeserver.start_time": datetime.now(pytz.timezone('America/Los_Angeles')).isoformat(),
-                
-        "caddy": hostname,
-        "caddy.@ws.0_header": "Connection *Upgrade*",
-        "caddy.@ws.1_header": "Upgrade websocket",
-        "caddy.0_route.handle": "/websockify*",
-        "caddy.0_route.handle.reverse_proxy": "@ws {{upstreams 6080}}",
-        "caddy.1_route.handle": "/vnc/*",
-        "caddy.1_route.handle_path": "/vnc/*",
-        "caddy.1_route.handle_path.reverse_proxy": "{{upstreams 6080}}",
-        "caddy.2_route.handle": "/*",
-        "caddy.2_route.handle.reverse_proxy": "{{upstreams 8080}}"
-    }
-    
-    # This part sets up a port redirection for development, where we don't have
-    # a reverse proxy in front of the container.
-    
-    internal_port = "8080"
-    
-    if port is True:
-        ports = [internal_port]
-    elif port is not None and port is not False:
-        ports = [f"{port}:{internal_port}"]
-    else:
-        ports = None
-    
-    
-    return {
-        "name": container_name,
-        "image": image,
-        "labels": labels,
-        "environment": env_vars,
-        "ports": ports,
-        "network" : ["caddy", "jtlctl"],
-        
-    }
-    
-    
-    
 def process_port_bindings(ports):
     # Prepare port bindings
     if isinstance(ports, dict):
@@ -89,12 +23,9 @@ def process_port_bindings(ports):
         
     return port_bindings
 
-
 def make_container_name(username):
     return f"{slugify(username)}"   
     
-
-
     
 def get_port_from_container(container, container_port):
     """

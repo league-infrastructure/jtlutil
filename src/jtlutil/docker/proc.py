@@ -1,3 +1,6 @@
+
+
+
 class ProcessBase:
     """Base class for both Container and Service objects."""
     def __init__(self, manager, obj):
@@ -43,11 +46,9 @@ class ProcessBase:
         """Return the status of the process."""
         raise NotImplementedError("Subclasses must implement the status property")
 
-   
     def reload(self):
         """Reload the object and refresh all its data."""
         self._object.reload()
-
 
 class Container(ProcessBase):
     """Represents a single Docker container."""
@@ -55,7 +56,6 @@ class Container(ProcessBase):
     def start(self):
         """Start the container."""
         self._object.start()
-
 
     @property
     def labels(self):
@@ -83,7 +83,7 @@ class Container(ProcessBase):
             'memory_usage': mem,
             'hostname': self.o.labels.get('caddy')
         }
-     
+
 
     def remove(self):
         """Remove the process."""
@@ -96,7 +96,6 @@ class Container(ProcessBase):
 
 class Service(ProcessBase):
     """Represents a single Docker service (for Swarm mode)."""
-    
     
     def _get_single_task(self):
         """Fetch the single task associated with this service."""
@@ -132,7 +131,7 @@ class Service(ProcessBase):
                 'service_id': self.id,
                 'service_name': self.name,
                 'container_id':t["Status"].get("ContainerStatus", {}).get("ContainerID"),
-                'node_id': t['NodeID'],
+                'node_id': t.get('NodeID'),
                 'state': t['Status']['State'],
                 'hostname': hostname,
                 'timestamp': t['Status']['Timestamp'],

@@ -1,6 +1,6 @@
 [project]
 name = "jtlutil"
-version = "0.3.4"
+version = "0.3.5"
 description = "Support routines for League infrastructure"
 readme = "README.md"
 authors = [

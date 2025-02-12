@@ -89,10 +89,11 @@ def get_config_dirs(cwd=None, root=Path('/'), home=Path().home()) -> List[Path]:
     return  [
         cwd,
         home.joinpath('.jtl'),
-        root / Path('etc/jtl'), 
-        root / Path('etc/jtl/secrets'), 
-        root / Path('app/config'),
-        root / Path('app/secrets'),
+
+        root / 'app/config',
+        root / 'app/secrets',
+        root / 'config',
+        root / 'secrets',
         cwd.joinpath('secrets'),
         cwd.parent.joinpath('secrets'),
     ] 
@@ -112,6 +113,7 @@ def find_config_files(file: str | List[str], dirs: List[str] | List[Path] = None
     for d in dirs:
         for f in file:
             p = Path(d) / f 
+           
             if p.exists():
                 files.append(p)  
     
@@ -191,7 +193,7 @@ def get_config_tree(config_root: Path, deploy_name='devel', env_pos='last') -> C
     
     for e in tree:
         f =  root / Path(e.format(deploy_name=deploy_name))
-      
+             
         if f.exists():
             d.update(dotenv_values(f))
             configs.append(f)
@@ -202,7 +204,6 @@ def get_config_tree(config_root: Path, deploy_name='devel', env_pos='last') -> C
     
     return Config(d)
             
-    
     
 
 def path_interp(path: str, **kwargs) -> Tuple[str, Dict[str, Any]]:

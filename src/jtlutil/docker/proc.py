@@ -127,6 +127,9 @@ class Service(ProcessBase):
             hostname = labels.get('caddy')
             labels = {k: v for k, v in labels.items() if not k.startswith('caddy')}
             
+            import pprint
+            pprint(t)
+            
             yield {
                 'service_id': self.id,
                 'service_name': self.name,
